@@ -81,6 +81,7 @@ env/
 .venv/
 venv.bak/
 env.bak/
+.env
 pipenv --venv
 
 # Editor directories and files
