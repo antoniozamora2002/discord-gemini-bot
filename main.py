@@ -1,16 +1,78 @@
-# This is a sample Python script.
+import discord
+from discord.ext import commands
+import os
+import asyncio
+from dotenv import load_dotenv
 
-# Press Mayús+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+# 1. Cargar variables de entorno desde .env
+load_dotenv()
+TOKEN = os.getenv("DISCORD_TOKEN")
+
+# Verificación de seguridad
+if not TOKEN:
+    raise ValueError("⛔ ERROR: No se encontró el DISCORD_TOKEN en el archivo .env")
+
+# 2. Configurar los "Intents" (Permisos privilegiados)
+# 'message_content' es OBLIGATORIO para que el bot pueda leer lo que escriben los usuarios
+intents = discord.Intents.default()
+intents.message_content = True
+intents.members = True  # Útil para logs o bienvenidas futuras
 
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+# 3. Definir la clase del Bot
+class GeminiBot(commands.Bot):
+    def __init__(self):
+        super().__init__(
+            command_prefix="!",  # Prefijo para comandos antiguos (opcional si usas slash commands)
+            intents=intents,
+            help_command=None  # Desactivamos la ayuda por defecto para hacer la nuestra propia si queremos
+        )
+
+    async def setup_hook(self):
+        """
+        Este método se ejecuta UNA vez al iniciar el bot.
+        Es el lugar perfecto para cargar los Cogs y sincronizar comandos.
+        """
+        print("⚙️  Cargando extensiones (Cogs)...")
+
+        # Lista de cogs a cargar
+        initial_extensions = [
+            'cogs.general',
+            'cogs.chat_analysis',
+            'cogs.image_creation'
+        ]
+
+        for extension in initial_extensions:
+            try:
+                await self.load_extension(extension)
+                print(f"  ✅ Extension cargada: {extension}")
+            except Exception as e:
+                print(f"  ❌ Error cargando {extension}: {e}")
+
+        # Sincronizar los comandos Slash (/) con Discord
+        # Nota: En bots muy grandes esto no se hace aquí, pero para este proyecto está bien.
+        print("🔄 Sincronizando árbol de comandos...")
+        await self.tree.sync()
+        print("✨ ¡Árbol de comandos sincronizado!")
+
+    async def on_ready(self):
+        print(f"------------------------------------")
+        print(f"🤖 Bot conectado como: {self.user} (ID: {self.user.id})")
+        print(f"------------------------------------")
+        # Cambiar el estado del bot (Ej: "Jugando a Conversar")
+        await self.change_presence(activity=discord.Game(name="con la API de Gemini"))
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+# 4. Instanciar y ejecutar el bot
+async def main():
+    bot = GeminiBot()
+    async with bot:
+        await bot.start(TOKEN)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        # Manejo limpio de CTRL+C
+        print("\n🛑 Bot detenido por el usuario.")
