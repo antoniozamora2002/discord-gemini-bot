@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-# Importamos nuestros servicios y utilidades (que crearemos luego)
 from services.gemini_service import GeminiService
 from utils.image_utils import download_image_to_bytes
 from utils.message_utils import split_message
