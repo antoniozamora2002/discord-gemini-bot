@@ -3,6 +3,8 @@ from discord.ext import commands
 from discord import app_commands
 import io
 from services.gemini_service import GeminiService
+import os
+
 
 class ImageCreation(commands.Cog):
     def __init__(self, bot):
@@ -13,29 +15,37 @@ class ImageCreation(commands.Cog):
     @app_commands.command(name="imagina", description="Genera una imagen basada en tu descripción.")
     @app_commands.describe(prompt="Descripción detallada de la imagen que quieres crear")
     async def imagine(self, interaction: discord.Interaction, prompt: str):
-        # 1. Deferimos la respuesta porque la IA tarda más de 3 segundos en generar imagen
         await interaction.response.defer(thinking=True)
 
-        try:
-            # 2. Llamamos al servicio para crear la imagen
-            # La función debe retornar bytes crudos de la imagen
-            image_data = await self.gemini.create_image(prompt)
+        # 1. Obtenemos el ID del admin desde las variables de entorno
+        admin_id_env = os.getenv("ADMIN_ID")
 
-            if not image_data:
-                await interaction.followup.send("❌ La política de seguridad bloqueó la imagen o hubo un error.")
-                return
+        # 2. Verificamos si el usuario actual es el admin
+        # Convertimos a int porque las variables de entorno son strings
+        is_admin = False
+        if admin_id_env and str(interaction.user.id) == admin_id_env:
+            is_admin = True
 
-            # 3. Convertimos los bytes en un archivo de Discord
-            # Usamos io.BytesIO para manejarlo en memoria
-            file_obj = io.BytesIO(image_data)
-            discord_file = discord.File(fp=file_obj, filename="generated_image.png")
+        # 3. Llamamos al servicio pasando el estado de admin
+        image_data = await self.bot.gemini.create_image(prompt, is_admin=is_admin)
 
-            # 4. Enviamos la imagen
-            await interaction.followup.send(content=f"🎨 **Prompt:** {prompt}", file=discord_file)
+        if image_data:
+            # (El resto del código de envío de imagen sigue igual...)
+            file = discord.File(io.BytesIO(image_data), filename="imagen_generada.png")
+            embed = discord.Embed(
+                title="🎨 Imagen Generada",
+                description=f"**Prompt:** {prompt}",
+                color=discord.Color.random()
+            )
+            embed.set_image(url="attachment://imagen_generada.png")
+            embed.set_footer(text=f"Generado por {interaction.user.display_name} • Modelo: Gemini 2.5 Flash")
 
-        except Exception as e:
-            print(f"Error generando imagen: {e}")
-            await interaction.followup.send(f"Ocurrió un error intentando generar la imagen.")
+            await interaction.followup.send(embed=embed, file=file)
+        else:
+            await interaction.followup.send(
+                "❌ No se pudo generar la imagen. Puede que el prompt sea demasiado explícito incluso para mis filtros relajados.",
+                ephemeral=True)
+
 
 async def setup(bot):
     await bot.add_cog(ImageCreation(bot))

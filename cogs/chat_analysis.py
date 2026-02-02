@@ -45,7 +45,8 @@ class ChatAnalysis(commands.Cog):
                             # Llamamos a Gemini en modo Visión
                             response_text = await self.gemini.analyze_image(
                                 prompt=clean_text or "Describe esta imagen.",
-                                image_bytes=image_bytes
+                                image_bytes=image_bytes,
+                                user_id=message.author.id
                             )
                         else:
                             response_text = "⚠️ Solo puedo analizar imágenes (PNG, JPG, WEBP)."
