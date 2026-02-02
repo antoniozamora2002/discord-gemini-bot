@@ -13,11 +13,11 @@ class GeminiService:
         # Inicializamos el cliente moderno de Google GenAI
         self.client = genai.Client(api_key=api_key)
 
-        # Configuración del modelo de texto/visión (Gemini 2.0 Flash o 1.5 Flash)
+        # Configuración del modelo de texto/visión (Gemini 2.5 Flash)
         self.text_model_id = "gemini-2.5-pro"
 
-        # Configuración del modelo de generación de imagen (Imagen 3)
-        self.image_model_id = "gemini-2.0-flash-exp-image-generation"
+        # Configuración del modelo de generación de imagen
+        self.image_model_id = "gemini-2.5-flash-image"
 
         # Cargar instrucciones del sistema (personalidad)
         try:
@@ -91,27 +91,30 @@ class GeminiService:
 
     async def create_image(self, prompt: str) -> bytes:
         """
-        Genera una imagen usando Imagen 3 y devuelve los bytes crudos.
+        Genera una imagen usando Gemini 2.5 Flash Image y devuelve los bytes.
         """
         try:
-            # Llamada al modelo de generación de imágenes
-            response = self.client.models.generate_images(
+            response = self.client.models.generate_content(
                 model=self.image_model_id,
-                prompt=prompt,
-                config=types.GenerateImagesConfig(
-                    number_of_images=1,
-                    aspect_ratio="1:1",  # Puedes cambiar a "16:9" o "3:4"
-                    include_rai_reason=True  # Filtros de seguridad
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_modalities=["IMAGE"],
+                    safety_settings=[
+                        types.SafetySetting(
+                            category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                            threshold="BLOCK_ONLY_HIGH"
+                        )
+                    ]
                 )
             )
 
-            # Verificamos si se generó la imagen
-            if response.generated_images:
-                # Retornamos los bytes de la primera imagen generada
-                return response.generated_images[0].image.image_bytes
-            else:
-                print("⚠️ No se generó imagen (posible bloqueo de seguridad).")
-                return None
+            if response.candidates and response.candidates[0].content.parts:
+                for part in response.candidates[0].content.parts:
+                    if part.inline_data:
+                        return part.inline_data.data
+
+            print("⚠️ El modelo respondió pero sin imagen.")
+            return None
 
         except Exception as e:
             print(f"❌ Error creando imagen: {e}")
