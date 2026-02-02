@@ -14,10 +14,10 @@ class GeminiService:
         self.client = genai.Client(api_key=api_key)
 
         # Configuración del modelo de texto/visión (Gemini 2.0 Flash o 1.5 Flash)
-        self.text_model_id = "gemini-2.0-flash"
+        self.text_model_id = "gemini-2.5-pro"
 
         # Configuración del modelo de generación de imagen (Imagen 3)
-        self.image_model_id = "imagen-3.0-generate-002"
+        self.image_model_id = "gemini-2.0-flash-exp-image-generation"
 
         # Cargar instrucciones del sistema (personalidad)
         try:
