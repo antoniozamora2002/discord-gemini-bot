@@ -5,6 +5,7 @@ import os
 
 OWNER_ID = int(os.getenv("OWNER_ID"))
 
+
 class General(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -38,6 +39,20 @@ class General(commands.Cog):
             await interaction.response.send_message("❌ No eres mi creador.", ephemeral=True)
             return
         await interaction.response.send_message("Hola jefe.")
+
+    @app_commands.command(name="apagar", description="Desactiva el bot y envía un mensaje de despedida.")
+    async def apagar(self, interaction: discord.Interaction):
+        # Verificación de seguridad: Solo tú puedes apagarlo
+        if interaction.user.id != OWNER_ID:
+            await interaction.response.send_message("❌ No tienes permisos para apagarme.", ephemeral=True)
+            return
+
+        # Enviar el mensaje de despedida
+        print("🛑 Apagando sistema...")
+        await interaction.response.send_message("🔌 **Sistema desactivado.** ¡Hasta la próxima, humanos! 👋😴")
+
+        # Cerrar la conexión del bot
+        await self.bot.close()
 
 
 # Función de configuración obligatoria para cargar el Cog
