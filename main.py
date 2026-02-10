@@ -30,7 +30,7 @@ class GeminiBot(commands.Bot):
 
     async def setup_hook(self):
         """
-        Este método se ejecuta UNA vez al iniciar el bot.
+        Este metodo se ejecuta UNA vez al iniciar el bot.
         Es el lugar perfecto para cargar los Cogs y sincronizar comandos.
         """
         print("⚙️  Cargando extensiones (Cogs)...")
@@ -39,7 +39,8 @@ class GeminiBot(commands.Bot):
         initial_extensions = [
             'cogs.general',
             'cogs.chat_analysis',
-            'cogs.image_creation'
+            'cogs.image_creation',
+            'cogs.entertainment'
         ]
 
         for extension in initial_extensions:
