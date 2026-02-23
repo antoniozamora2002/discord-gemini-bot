@@ -1,8 +1,11 @@
 import discord
 from discord.ext import commands
+import logging
 from services.gemini_service import GeminiService
 from utils.image_utils import download_image_to_bytes
 from utils.message_utils import split_message
+
+logger = logging.getLogger('RebeccaBot.ChatAnalysis')
 
 
 class ChatAnalysis(commands.Cog):
@@ -23,6 +26,9 @@ class ChatAnalysis(commands.Cog):
 
         # Solo respondemos si nos mencionan o es un DM (puedes cambiar esta lógica)
         if is_mentioned or is_dm:
+
+            logger.info(
+                f"Procesando mensaje ID: {message.id} | Autor: {message.author.name} | Contenido: {message.content}")
 
             # Indicamos que el bot está "Escribiendo..." o "Pensando..."
             async with message.channel.typing():
@@ -58,9 +64,9 @@ class ChatAnalysis(commands.Cog):
                             await message.reply("Hola 👋 ¿En qué puedo ayudarte hoy?")
                             return
 
-                        # Llamamos a Gemini en modo Chat de Texto
-                        # Pasamos el ID del autor para gestionar historiales separados por usuario (opcional)
+                        logger.info(f"Enviando petición a Gemini para usuario {message.author.id}...")
                         response_text = await self.gemini.generate_text_response(clean_text, user_id=message.author.id)
+                        logger.info(f"Respuesta de Gemini recibida con éxito.")
 
                     # --- ENVIAR RESPUESTA ---
                     # Usamos nuestra utilidad para dividir mensajes si son muy largos (>2000 chars)
@@ -68,8 +74,11 @@ class ChatAnalysis(commands.Cog):
                     for chunk in chunks:
                         await message.reply(chunk)
 
+                    logger.info(f"Mensaje ID {message.id} respondido correctamente.")
+
                 except Exception as e:
-                    print(f"Error en chat_analysis: {e}")
+                    logger.error(
+                        f"Error crítico procesando mensaje ID {message.id}: {e}")
                     await message.reply("😵‍💫 Tuve un problema procesando eso. Intenta de nuevo.")
 
 

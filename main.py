@@ -2,7 +2,17 @@ import discord
 from discord.ext import commands
 import os
 import asyncio
+import logging
 from dotenv import load_dotenv
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    handlers=[
+        logging.StreamHandler()  # También muestra en la consola
+    ]
+)
+logger = logging.getLogger('RebeccaBot')
 
 # 1. Cargar variables de entorno desde .env
 load_dotenv()
