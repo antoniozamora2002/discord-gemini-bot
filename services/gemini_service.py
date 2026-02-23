@@ -29,7 +29,8 @@ class GeminiService:
                 model=self.text_model_id,
                 config=types.GenerateContentConfig(
                     system_instruction=self.system_instruction,
-                    temperature=0.7
+                    temperature=0.7,
+                    tools=[{"google_search": {}}]
                 )
             )
             self.chat_sessions[user_id] = chat

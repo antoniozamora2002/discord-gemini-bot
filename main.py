@@ -61,7 +61,7 @@ class GeminiBot(commands.Bot):
         print(f"🤖 Bot conectado como: {self.user} (ID: {self.user.id})")
         print(f"------------------------------------")
         # Cambiar el estado del bot (Ej: "Jugando a Conversar")
-        await self.change_presence(activity=discord.Game(name="con la API de Gemini"))
+        await self.change_presence(activity=discord.Game(name="con la chala de toño"))
 
 
 # 4. Instanciar y ejecutar el bot
