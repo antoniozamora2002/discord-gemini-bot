@@ -50,7 +50,8 @@ class GeminiBot(commands.Bot):
             'cogs.general',
             'cogs.chat_analysis',
             'cogs.image_creation',
-            'cogs.entertainment'
+            'cogs.entertainment',
+            'cogs.consultas'
         ]
 
         for extension in initial_extensions:
