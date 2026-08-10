@@ -28,7 +28,7 @@ class General(commands.Cog):
     @app_commands.command(name="info", description="Muestra información sobre este bot.")
     async def info(self, interaction: discord.Interaction):
         embed = discord.Embed(title="🤖 Rebecca Info", color=discord.Color.blue())
-        embed.add_field(name="Modelo", value="Google Gemini 1.5 Flash", inline=True)
+        embed.add_field(name="Modelo", value="Google Gemini 2.5 Pro", inline=True)
         embed.add_field(name="Capacidades", value="Texto, Visión, Generación de Imagen", inline=True)
         embed.set_footer(text="Desarrollado con discord.py y Google Generative AI")
         await interaction.response.send_message(embed=embed)

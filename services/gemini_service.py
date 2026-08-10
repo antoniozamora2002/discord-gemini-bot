@@ -11,8 +11,8 @@ class GeminiService:
             raise ValueError("❌ ERROR: La variable GEMINI_API_KEY no está configurada en el archivo .env")
 
         self.client = genai.Client(api_key=api_key)
-        self.text_model_id = "gemini-2.5-pro"
-        self.image_model_id = "gemini-2.5-flash-image"
+        self.text_model_id = "gemini-3.6-flash"
+        self.image_model_id = "gemini-3.1-flash-image"
 
         try:
             with open("prompts/bot_persona.md", "r", encoding="utf-8") as f:
