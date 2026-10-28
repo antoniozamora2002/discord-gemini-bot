@@ -4,12 +4,13 @@ import os
 import asyncio
 import logging
 from dotenv import load_dotenv
+from services.gemini_service import GeminiService
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
     handlers=[
-        logging.StreamHandler()  # También muestra en la consola
+        logging.StreamHandler()
     ]
 )
 logger = logging.getLogger('RebeccaBot')
@@ -17,13 +18,16 @@ logger = logging.getLogger('RebeccaBot')
 # 1. Cargar variables de entorno desde .env
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Verificación de seguridad
 if not TOKEN:
     raise ValueError("⛔ ERROR: No se encontró el DISCORD_TOKEN en el archivo .env")
 
-# 2. Configurar los "Intents" (Permisos privilegiados)
-# 'message_content' es OBLIGATORIO para que el bot pueda leer lo que escriben los usuarios
+if not GEMINI_API_KEY:
+    raise ValueError("⛔ ERROR: No se encontró la GEMINI_API_KEY en el archivo .env")
+
+# 2. Configurar Intents
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True  # Útil para logs o bienvenidas futuras
@@ -37,6 +41,8 @@ class GeminiBot(commands.Bot):
             intents=intents,
             help_command=None  # Desactivamos la ayuda por defecto para hacer la nuestra propia si queremos
         )
+        # Instanciar el servicio global de Gemini
+        self.gemini_service = GeminiService(api_key=GEMINI_API_KEY)
 
     async def setup_hook(self):
         """
@@ -51,13 +57,14 @@ class GeminiBot(commands.Bot):
             'cogs.chat_analysis',
             'cogs.image_creation',
             'cogs.entertainment',
-            'cogs.consultas'
+            'cogs.consultas',
+            'cogs.voice'  # <-- Agregado aquí
         ]
 
         for extension in initial_extensions:
             try:
                 await self.load_extension(extension)
-                print(f"  ✅ Extension cargada: {extension}")
+                print(f"  ✅ Extensión cargada: {extension}")
             except Exception as e:
                 print(f"  ❌ Error cargando {extension}: {e}")
 
@@ -86,5 +93,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        # Manejo limpio de CTRL+C
         print("\n🛑 Bot detenido por el usuario.")

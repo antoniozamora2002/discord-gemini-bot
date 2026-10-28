@@ -1,4 +1,5 @@
-discord.py
+discord.py[voice]>=2.7.1
+PyNaCl
 python-dotenv
-google-genai
+google-genai>=2.0.0
 aiohttp

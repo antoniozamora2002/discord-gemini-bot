@@ -28,7 +28,7 @@ class ImageCreation(commands.Cog):
                     color=discord.Color.random()
                 )
                 embed.set_image(url="attachment://imagen_generada.png")
-                embed.set_footer(text=f"Generado por {interaction.user.display_name} • Modelo: Gemini 2.5 Flash")
+                embed.set_footer(text=f"Generado por {interaction.user.display_name} • Modelo: Gemini 3.1 Flash")
                 await interaction.followup.send(embed=embed, file=file)
             else:
                 # Caso donde image_data es None o vacío

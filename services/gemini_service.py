@@ -1,17 +1,20 @@
+import base64
+import io
 import os
+import wave
 from google import genai
 from google.genai import types
 
 
 class GeminiService:
-    def __init__(self):
-        api_key = os.getenv("GEMINI_API_KEY")
+    def __init__(self, api_key: str = None):
+        api_key = api_key or os.getenv("GEMINI_API_KEY")
 
         if not api_key:
             raise ValueError("❌ ERROR: La variable GEMINI_API_KEY no está configurada en el archivo .env")
 
         self.client = genai.Client(api_key=api_key)
-        self.text_model_id = "gemini-3.6-flash"
+        self.text_model_id = "gemini-3.8-flash"
         self.image_model_id = "gemini-3.1-flash-image"
 
         try:
@@ -44,6 +47,54 @@ class GeminiService:
         except Exception as e:
             print(f"❌ Error generando texto: {e}")
             return "Lo siento, no puedo responder a eso (posible bloqueo de seguridad)."
+
+    async def generate_speech(self, text: str, voice_name: str = "Puck", style: str = "friendly") -> io.BytesIO:
+        """
+        Genera un buffer de audio en memoria utilizando gemini-3.8-flash-tts.
+        """
+        interaction = self.client.interactions.create(
+            model="gemini-3.8-flash-tts",
+            input=[{
+                "type": "user_input",
+                "content": [{
+                    "type": "text",
+                    "text": text,
+                    "annotations": [{
+                        "type": "speech_metadata",
+                        "style": style
+                    }]
+                }]
+            }],
+            response_format={"type": "audio"},
+            generation_config={
+                "speech_config": [
+                    {"voice": voice_name}
+                ]
+            }
+        )
+
+        output_audio = interaction.output_audio
+        if output_audio is None or not output_audio.data:
+            raise RuntimeError("El modelo no devolvió audio.")
+
+        # Decodificar el audio en base64 entregado por el modelo
+        raw_audio_bytes = base64.b64decode(output_audio.data)
+        audio_buffer = io.BytesIO()
+
+        # El TTS suele entregar PCM crudo (audio/l16) sin cabecera; se envuelve en WAV
+        # para que FFmpeg pueda detectar el formato al reproducirlo.
+        mime_type = (output_audio.mime_type or "").lower()
+        if mime_type.startswith("audio/l16") or mime_type.startswith("audio/pcm"):
+            with wave.open(audio_buffer, "wb") as wav_file:
+                wav_file.setnchannels(output_audio.channels or 1)
+                wav_file.setsampwidth(2)
+                wav_file.setframerate(output_audio.sample_rate or 24000)
+                wav_file.writeframes(raw_audio_bytes)
+        else:
+            audio_buffer.write(raw_audio_bytes)
+
+        audio_buffer.seek(0)
+        return audio_buffer
 
     async def analyze_image(self, prompt: str, image_bytes: bytes, user_id: int = None,
                             mime_type: str = "image/png") -> str:
