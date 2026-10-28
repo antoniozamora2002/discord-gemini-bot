@@ -8,6 +8,7 @@ class VoiceCog(commands.Cog):
     def __init__(self, bot, gemini_service: GeminiService):
         self.bot = bot
         self.gemini_service = gemini_service
+        self.custom_voices = {}  # guild_id -> voice_id creado con !crear_voz
 
     @commands.command(name="join")
     async def join_voice(self, ctx: commands.Context):
@@ -33,6 +34,20 @@ class VoiceCog(commands.Cog):
         else:
             await ctx.send("❌ No estoy en ningún canal de voz.")
 
+    @commands.command(name="crear_voz")
+    async def create_voice(self, ctx: commands.Context, *, descripcion: str):
+        """
+        Diseña una voz desde cero enviando una descripción en lenguaje natural.
+        Ejemplo: !crear_voz Un locutor de radio peruano, voz grave, muy alegre y dinámica.
+        """
+        async with ctx.typing():
+            try:
+                voice_id = await self.gemini_service.create_custom_voice(descripcion)
+                self.custom_voices[ctx.guild.id] = voice_id
+                await ctx.send(f"🎙️ **¡Voz creada y configurada para este servidor!**\nID: `{voice_id}`")
+            except Exception as e:
+                await ctx.send(f"❌ Error al diseñar la voz: `{e}`")
+    
     @commands.command(name="habla", aliases=["say", "tts"])
     async def speak_text(self, ctx: commands.Context, *, texto: str):
         """Sintetiza un texto enviado por un usuario sin micrófono y lo reproduce en el canal de voz."""
@@ -52,7 +67,9 @@ class VoiceCog(commands.Cog):
         async with ctx.typing():
             try:
                 # 1. Obtener audio generado desde Gemini TTS
-                audio_buffer = await self.gemini_service.generate_speech(texto)
+                # Usa la voz personalizada del servidor si existe; si no, la voz por defecto
+                voice = self.custom_voices.get(ctx.guild.id, "Puck")
+                audio_buffer = await self.gemini_service.generate_speech(texto, voice=voice)
 
                 # 2. Reproducir en el canal de voz usando FFmpeg
                 source = discord.FFmpegPCMAudio(audio_buffer, pipe=True)

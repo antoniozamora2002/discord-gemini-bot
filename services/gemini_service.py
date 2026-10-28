@@ -25,32 +25,28 @@ class GeminiService:
 
         self.chat_sessions = {}
 
-    async def _get_or_create_chat(self, user_id: int):
-        """Crea o recupera un chat."""
-        if user_id not in self.chat_sessions:
-            chat = self.client.chats.create(
-                model=self.text_model_id,
-                config=types.GenerateContentConfig(
-                    system_instruction=self.system_instruction,
-                    temperature=0.7,
-                    tools=[{"google_search": {}}]
-                )
+    async def create_custom_voice(self, voice_description: str) -> str:
+            """
+            Crea una voz personalizada a partir de un texto (Voice Design) 
+            y devuelve el ID de voz (voice_id) generado.
+            """
+            # Creación mediante endpoint de Voice Design
+            voice = self.client.voices.create(
+                voice={
+                    "type": "prompted",
+                    "prompted": {
+                        "input": voice_description  # Ejemplo: "Chico peruano joven, entusiasta, tono claro y amigable"
+                    }
+                },
+                store=True  # Obligatorio para voces "prompted"; Google guarda la voz y devuelve su ID
             )
-            self.chat_sessions[user_id] = chat
-        return self.chat_sessions[user_id]
-
-    async def generate_text_response(self, user_prompt: str, user_id: int) -> str:
-        try:
-            chat = await self._get_or_create_chat(user_id)
-            response = chat.send_message(user_prompt)
-            return response.text
-        except Exception as e:
-            print(f"❌ Error generando texto: {e}")
-            return "Lo siento, no puedo responder a eso (posible bloqueo de seguridad)."
-
-    async def generate_speech(self, text: str, voice_name: str = "Puck", style: str = "friendly") -> io.BytesIO:
+            return voice.id  # ID guardado (ej. 'voice_abc123def456')
+    
+    async def generate_speech(self, text: str, voice: str = "Puck",
+                             style: str = "friendly, conversational") -> io.BytesIO:
         """
-        Genera un buffer de audio en memoria utilizando gemini-3.8-flash-tts.
+        Genera el audio en base al texto, voz (ID personalizado o predeterminado) 
+        y estilo (actuación / matiz).
         """
         interaction = self.client.interactions.create(
             model="gemini-3.8-flash-tts",
@@ -68,7 +64,7 @@ class GeminiService:
             response_format={"type": "audio"},
             generation_config={
                 "speech_config": [
-                    {"voice": voice_name}
+                    {"voice": voice}  # Puede ser "Puck" o el voice_id de Voice Design
                 ]
             }
         )
@@ -95,6 +91,29 @@ class GeminiService:
 
         audio_buffer.seek(0)
         return audio_buffer
+
+    async def _get_or_create_chat(self, user_id: int):
+        """Crea o recupera un chat."""
+        if user_id not in self.chat_sessions:
+            chat = self.client.chats.create(
+                model=self.text_model_id,
+                config=types.GenerateContentConfig(
+                    system_instruction=self.system_instruction,
+                    temperature=0.7,
+                    tools=[{"google_search": {}}]
+                )
+            )
+            self.chat_sessions[user_id] = chat
+        return self.chat_sessions[user_id]
+
+    async def generate_text_response(self, user_prompt: str, user_id: int) -> str:
+        try:
+            chat = await self._get_or_create_chat(user_id)
+            response = chat.send_message(user_prompt)
+            return response.text
+        except Exception as e:
+            print(f"❌ Error generando texto: {e}")
+            return "Lo siento, no puedo responder a eso (posible bloqueo de seguridad)."
 
     async def analyze_image(self, prompt: str, image_bytes: bytes, user_id: int = None,
                             mime_type: str = "image/png") -> str:
